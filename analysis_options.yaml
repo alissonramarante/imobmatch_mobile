@@ -1,28 +1,84 @@
 # This file configures the analyzer, which statically analyzes Dart code to
 # check for errors, warnings, and lints.
-#
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
-
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
-linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
-  #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
-  rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+# -----------------------------------------------------------------------------
+# 1. CONFIGURAÇÕES DO ANALYZER (COMPILADOR E TIPAGEM)
+# -----------------------------------------------------------------------------
+# Esta seção torna o compilador do Dart mais "chato" (estrito).
+# Para um Front-end que consome APIs, isso é CRÍTICO para evitar que o app quebre
+# quando chegar um dado inesperado (ex: null) do Backend.
+# -----------------------------------------------------------------------------
+analyzer:
+  language:
+    # Impede que o Dart converta silenciosamente 'dynamic' para outros tipos.
+    # Ex: Se o JSON vier como dynamic, você é OBRIGADO a verificar o tipo antes de usar.
+    strict-casts: true
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+    # O compilador para de "adivinhar" tipos quando não estão claros.
+    # Ex: Obriga a declarar 'var lista = <String>[]' em vez de 'var lista = []'.
+    strict-inference: true
+
+    # Proíbe o uso de Generics sem especificar o tipo (Raw Types).
+    # Ex: Proíbe usar apenas 'List'. Tem que ser 'List<int>' ou 'List<dynamic>'.
+    # (Muito parecido com os warnings de Generics do Java).
+    strict-raw-types: true
+
+  # Ignora arquivos gerados automaticamente por bibliotecas (como JSON Serializable ou MobX),
+  # pois eles muitas vezes não seguem as mesmas regras de estilo do código manual.
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+
+# -----------------------------------------------------------------------------
+# 2. REGRAS DO LINTER (BOAS PRÁTICAS E ESTILO)
+# -----------------------------------------------------------------------------
+linter:
+  rules:
+    # --- ESTILIZAÇÃO (PADRÃO VISUAL) ---
+
+    # Usa aspas simples ('texto') em vez de duplas ("texto").
+    # Padrão da comunidade Dart/Flutter. Reduz ruído visual.
+    prefer_single_quotes: true
+
+    # Em Widgets, obriga que propriedades 'child' ou 'children' fiquem no final.
+    # Isso faz o código refletir a árvore visual da UI, facilitando a leitura.
+    sort_child_properties_last: true
+
+    # Exige vírgula no final de listas de parâmetros longos.
+    # O "Auto-Format" do Flutter só quebra as linhas verticalmente se essa vírgula existir.
+    require_trailing_commas: true
+
+
+    # --- BOAS PRÁTICAS E PERFORMANCE ---
+
+    # Obriga a declarar o tipo de retorno de métodos (void, Widget, int).
+    # Evita que você retorne dados errados sem querer.
+    always_declare_return_types: true
+
+    # Avisa se você chamar uma função assíncrona (Future) e esquecer o 'await'.
+    # Evita o erro de "chamar e esquecer", onde o código continua executando sem o dado estar pronto.
+    unawaited_futures: true
+
+    # Avisa se você deixar um 'print()' no código.
+    # Em produção (Release), prints podem travar a thread principal no Android se o log for grande.
+    avoid_print: true
+
+    # Pede para adicionar 'const' em widgets que não mudam.
+    # PERFORMANCE: O Flutter não redesenha widgets const, economizando muita CPU e bateria.
+    prefer_const_constructors: true
+
+
+    # --- SEGURANÇA E PREVENÇÃO DE ERROS (BUGS) ---
+
+    # Obriga a cancelar StreamSubscriptions (ouvintes de dados).
+    # Se não cancelar, o app continua ouvindo em background mesmo se o usuário fechar a tela (Memory Leak).
+    cancel_subscriptions: true
+
+    # Proíbe usar 'return', 'break' ou 'continue' dentro de um bloco 'finally'.
+    # Isso impede que erros (Exceptions) sejam "engolidos" silenciosamente.
+    control_flow_in_finally: true
+
+    # Avisa se você repetir o mesmo valor em casos diferentes de um switch.
+    # Geralmente indica erro de lógica ou código duplicado inútil.
+    no_duplicate_case_values: true
