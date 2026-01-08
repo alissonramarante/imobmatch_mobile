@@ -13,4 +13,4 @@ class UiConfig {
       backgroundColor:  Color(0xFF0292E3),
     ),
   );
-}git pull
+}
